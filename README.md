@@ -11,7 +11,7 @@
 - Microsoft Azure アカウント
 
 ### 2. **リポジトリ取得**
-`git clone https://github.com/nextcomkk/CognitveServicesDemo`
+`git clone https://github.com/nextcomkk/CognitiveServicesDemo`
 
 ### 3. **パッケージインストール**
 
