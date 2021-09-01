@@ -1,0 +1,173 @@
+﻿@model IEnumerable<CognitiveServicesDemo.Models.SearchResultUserMedia>
+
+@{
+    ViewData["Title"] = "イメージ検索（Storage Table）";
+}
+
+<div class="container">
+    <div class="panel panel-warning">
+        <div class="panel-heading">
+            <h3 class="panel-title">イメージ検索（Storage Table）</h3>
+        </div>
+        <div style="display:inline-flex">
+            <div class="row">
+                <div class="col-lg-4 col-md-6 col-xs-12">
+                    <partial name="_SelectSearchPartial" />
+                </div>
+                <div class="col-lg-8 col-md-10 col-xs-12">
+                    <form asp-controller="UserMediaSearch" asp-action="Table" method="get" name="form">
+                        <div style="display:inline-flex">
+                            <input type="text" class="form-control" id="SearchKeywords" name="SearchKeywords" placeholder="検索ワードを入力してください" value="@ViewBag.searchKeywords" style="min-width:240px;" />
+                            <input type="submit" class="btn search-button" value="検索" onclick="this.disabled=true; submit();" />
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h6 class="text-danger">@TempData["ErrorMessage"]</h6>
+        </div>
+        <div>
+            <div class="file-count-display">@ViewBag.ResultInfo</div>
+        </div>
+        <div class="panel-body">
+        </div>
+    </div>
+    <div class="row">
+        @foreach (var item in Model)
+        {
+        <div class="col-lg-3 col-md-4 col-xs-6 thumb image-description">
+            <div class="box">
+                <a class="thumbnail" href='?searchKeywords=@item.Tags.Replace("&", "%26")'>
+                    <img class="img-responsive" src="@item.MediaUrl" style="height: auto;width:100%;" title='@item.Tags.Replace("%2B", "+")'>
+                    <p>@item.SearchScore</p>
+                </a>
+            </div>
+        </div>
+        }
+    </div>
+</div>
+@section scripts {
+    <script>
+        function auto_selection() {
+            switch (sessionStorage.getItem('search-mode')) {
+                case 'Cosmos':
+                    selected = 0; break;
+                case 'Table':
+                    selected = 1; break;
+                case 'Blob':
+                    selected = 2; break;
+                case 'SQL':
+                    selected = 3; break;
+                default:
+                    selected = 0;
+            }
+            document.getElementById("select-search").selectedIndex = selected;
+        }
+        function change_mode() {
+            var words = document.getElementById('SearchKeywords');
+            if (words.value != null && words.value != '') {
+                tags_array = words.value.split('+');
+                tags_str = tags_array.join('%2B');
+                window.location.href = sessionStorage.getItem('search-mode') + '?searchKeywords=' + tags_str.replace('&', '%26');;
+            }
+            else window.location.href = sessionStorage.getItem('search-mode');
+        }
+
+        $(function () {
+            $('#select-search').change(function () {
+                sessionStorage.setItem('search-mode', $(this).val());
+                var words = document.getElementById('SearchKeywords');
+                change_mode();
+            });
+        });
+        $(function () {
+            mode = location.pathname.split('/');
+            sessionStorage.setItem('search-mode', mode[mode.length - 1]);
+            switch (performance.navigation.type) {
+                case 0:
+                case 1:
+                    auto_selection(); break;
+                case 2:
+                default:
+                    change_mode();
+                    auto_selection();
+            }
+        });
+    </script>
+}
+
+<style>
+    .panel-title {
+        color: gray;
+        margin-bottom: 20px;
+    }
+
+    .search-button {
+        background-color: cornflowerblue;
+        color: white;
+        width: 100px;
+    }
+
+    .search-button:hover {
+        column-rule-color: darkblue;
+        background-color: dodgerblue;
+    }
+
+    .save-button {
+        background-color: cornflowerblue;
+        color: white;
+        margin-top: 10px;
+        width: 100px;
+    }
+
+    .save-button:hover {
+        column-rule-color: darkblue;
+        background-color: dodgerblue;
+    }
+
+    .file-count-display {
+        color: darkblue;
+        margin-top: 10px;
+    }
+
+    .img-responsive {
+        top: 5px;
+    }
+
+    .image-description {
+        background-color: white;
+        font-size: 10pt;
+        padding: 10px;
+    }
+
+    .box {
+        position: relative;
+    }
+        .box p {
+            color: white;
+            font-size: 20px;
+            background-color: black;
+            opacity: 0.5;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 0 5px;
+        }
+
+    .delete-button {
+        background-color: sandybrown;
+        color: white;
+        padding: 5px;
+        border-radius: 4px;
+        position: relative;
+        margin-bottom: 4px;
+    }
+
+        .delete-button:hover {
+            color: black;
+            background-color: saddlebrown;
+        }
+
+
+</style>

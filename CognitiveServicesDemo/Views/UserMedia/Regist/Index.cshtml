@@ -1,0 +1,432 @@
+﻿@model CognitiveServicesDemo.Utilities.PaginatedList<UserMedia>
+
+@{
+    ViewData["Title"] = "イメージ登録";
+}
+
+<div class="container">
+    <div class="panel panel-warning">
+        <div class="panel-heading">
+            <h3 class="panel-title">イメージ登録</h3>
+        </div>
+        <div class="panel-body">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Dropzone Start -->
+            <form asp-action="UploadMediaFile" asp-controller="UserMediaRegist" method="post" enctype="multipart/form-data" class="form-horizontal dropzone" name="dropzoneForm" id="dropzoneForm">
+                <div class="form-group form-actions">
+                    <div class="fallback"></div>
+                    <input type="file" name="upfiles" id="upfiles" multiple style="display: none;" />
+                </div>
+            </form>
+            <!-- Dropzone End -->
+        </div>
+    </div>
+    <div class="row">
+        <span id="blinking" style="display:none;margin-left:12px;">ファイルをアップロード中です。しばらくお待ちください</span>
+        <div><h6 class="text-danger">@TempData["ErrorMessage"]</h6></div>
+    </div>
+    <div class="row">
+        <div class="col-md-3 col-xs-12" style="text-align:left;">
+            <button type="submit" id="upload_submit" class="btn save-button" form="dropzoneForm">　登録　</button>
+        </div>
+        <div class="col-md-9 col-xs-12" style="text-align:right;">
+            @{
+                var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+                var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+            }
+
+            <span style="color:dimgrey">@Model.PageIndex / @Model.TotalPages ページ (@ViewBag.ItemCount 件)</span>
+            <br />
+            <a asp-action="Index"
+               asp-route-pageNumber="1"
+               class="btn btn-secondary @prevDisabled">
+                最初
+            </a>
+            <a asp-action="Index"
+               asp-route-pageNumber="@(Model.PageIndex - 1)"
+               class="btn btn-secondary @prevDisabled">
+                前へ
+            </a>
+
+            @{
+                if (Model.TotalPages > 5)
+                {
+                    if (Model.PageIndex <= 3)
+                    {
+                        for (int i = 1; i <= 5; i++)
+                        {
+                            var disabled = (Model.PageIndex == i) ? "disabled" : "";
+                            <a asp-action="Index"
+                               asp-route-pageNumber="@i"
+                               class="btn btn-secondary @disabled">
+                                @i
+                            </a>
+                        }
+                    }
+                    else if (Model.PageIndex < (Model.TotalPages - 2))
+                    {
+                        for (int i = Model.PageIndex - 2; i <= Model.PageIndex + 2; i++)
+                        {
+                            var disabled = (Model.PageIndex == i) ? "disabled" : "";
+                            <a asp-action="Index"
+                               asp-route-pageNumber="@i"
+                               class="btn btn-secondary @disabled">
+                                @i
+                            </a>
+                        }
+                    }
+                    else
+                    {
+                        for (int i = Model.TotalPages - 4; i <= Model.TotalPages; i++)
+                        {
+                            var disabled = (Model.PageIndex == i) ? "disabled" : "";
+                            <a asp-action="Index"
+                               asp-route-pageNumber="@i"
+                               class="btn btn-secondary @disabled">
+                                @i
+                            </a>
+                        }
+                    }
+                }
+            }
+
+            <a asp-action="Index"
+               asp-route-pageNumber="@(Model.PageIndex + 1)"
+               class="btn btn-secondary @nextDisabled">
+                次へ
+            </a>
+            <a asp-action="Index"
+               asp-route-pageNumber="@(Model.TotalPages)"
+               class="btn btn-secondary @nextDisabled">
+                最後
+            </a>
+        </div>
+    </div>
+    <div class="row">
+        <br />
+        @foreach (var item in Model)
+        {
+            <hr style="width: 100%; margin:0 10px 0 10px;">
+            <div class="col-lg-4 col-md-8 col-xs-12 thumb image-description">
+                <a name="_@item.MediaId"></a>
+                <a class="thumbnail" href="@item.MediaUrl" target="_blank">
+                    <img class="img-responsive" src="@item.MediaUrl" style="height:auto; width:100%;" alt="@item.MediaFileName">
+                </a>
+            </div>
+            <div class="col-lg-4 col-md-8 col-xs-12 image-description">
+                <!-- <p>ファイル名: @item.MediaFileName</p> -->
+                <!-- <p>アップロード日時: @item.DateTimeUploaded.ToString("yyyy/MM/dd HH:mm:ss")</p> -->
+                <!-- <p>ファイルタイプ: @item.MediaFileType</p> -->
+                <p>
+                    @{ var tag_html = "<div style='display: table-cell;vertical-align:top;'>";
+                        var tags = item.Tags.Split("|");
+                        var last = tags.Last();
+
+                        foreach (var tag in tags)
+                        {
+                            if (tag.Equals("|") || tag.Equals("")) break;
+                            var tag_array = tag.Split(":");
+                            var classname = "";
+                            if (Int32.Parse(tag_array[2]) == 0) { classname = "tag-button"; } else { classname = "tag-button-m"; }
+                            tag_html += $"<a class='{classname}' href='../UserMediaSearch/?searchKeywords={tag_array[0].ToString().Replace("&", "%26")}' title='確からしさ: {Math.Round(Double.Parse(tag_array[1]) * 100.0, 2).ToString()}%'> {tag_array[0].ToString()} </a> ";
+                        }
+                        tag_html += $"</div><a href='#' data-toggle='modal' onclick='OpenEditTagsModal({item.MediaId});' title='独自タグ編集'><i class='fas fa-tag fa-lg' style='color:coral;'></i></a>";
+                    }
+                    @Html.Raw(tag_html)
+                </p>
+            </div>
+        }
+    </div>
+
+    <div class="row">
+        <div class="col-md-12" style="text-align:right;">
+            <span style="color:dimgrey">@Model.PageIndex / @Model.TotalPages ページ (@ViewBag.ItemCount 件)</span>
+            <br />
+            <a asp-action="Index"
+               asp-route-pageNumber="1"
+               class="btn btn-secondary @prevDisabled">
+                最初
+            </a>
+            <a asp-action="Index"
+               asp-route-pageNumber="@(Model.PageIndex - 1)"
+               class="btn btn-secondary @prevDisabled">
+                前へ
+            </a>
+
+            @{
+                if (Model.TotalPages > 5)
+                {
+                    if (Model.PageIndex <= 3)
+                    {
+                        for (int i = 1; i <= 5; i++)
+                        {
+                            var disabled = (Model.PageIndex == i) ? "disabled" : "";
+                <a asp-action="Index"
+                   asp-route-pageNumber="@i"
+                   class="btn btn-secondary @disabled">
+                    @i
+                </a>
+                        }
+                    }
+                    else if (Model.PageIndex < (Model.TotalPages - 2))
+                    {
+                        for (int i = Model.PageIndex - 2; i <= Model.PageIndex + 2; i++)
+                        {
+                            var disabled = (Model.PageIndex == i) ? "disabled" : "";
+                <a asp-action="Index"
+                   asp-route-pageNumber="@i"
+                   class="btn btn-secondary @disabled">
+                    @i
+                </a>
+                        }
+                    }
+                    else
+                    {
+                        for (int i = Model.TotalPages - 4; i <= Model.TotalPages; i++)
+                        {
+                            var disabled = (Model.PageIndex == i) ? "disabled" : "";
+                <a asp-action="Index"
+                   asp-route-pageNumber="@i"
+                   class="btn btn-secondary @disabled">
+                    @i
+                </a>
+                        }
+                    }
+                }
+            }
+
+            <a asp-action="Index"
+               asp-route-pageNumber="@(Model.PageIndex + 1)"
+               class="btn btn-secondary @nextDisabled">
+                次へ
+            </a>
+            <a asp-action="Index"
+               asp-route-pageNumber="@(Model.TotalPages)"
+               class="btn btn-secondary @nextDisabled">
+                最後
+            </a>
+        </div>
+    </div>
+</div>
+<!-- Placeholder -->
+<div id="ModalPlace">
+</div>
+@section scripts {
+    <script>
+        function OpenEditTagsModal(id) {
+            $.ajax({
+                url: 'UserMediaRegist/EditTags?id=' + id,
+                type: 'get',
+                cache: false,
+            })
+            .done(function (response) {
+                $("#ModalPlace").html(response);
+                $("#ModalPlace").find('.modal').modal('show');
+            })
+            .fail(function (xhr) {
+                alert('Modal Error!' + xhr);
+            })
+            .always(function (xhr, msg) {
+                console.log(xhr, msg);
+            });
+        }
+
+        /* DropZone */
+        function myParamName() {
+            return "upfiles";
+        }
+        Dropzone.options.dropzoneForm = {
+            paramName: myParamName,
+            autoProcessQueue: false,
+            uploadMultiple: true,
+            init: function () {
+                var myDropzone = this;
+                $("#upload_submit").click(function (e) {
+                    this.disabled = true;
+                    allFiles = myDropzone.getAcceptedFiles();
+
+                    if (allFiles.length > 0) {
+                        const p = document.getElementById("blinking");
+                        p.style.display = "block";
+
+                        inputFiles = document.getElementById("upfiles");
+                        const dt = new DataTransfer();
+
+                        for (i = 0; i < allFiles.length; i++) {
+                            dt.items.add(allFiles[i]);
+                        }
+                        inputFiles.files = dt.files;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    myDropzone.processQueue();
+                    document.dropzoneForm.submit();
+                });
+
+                // on add file
+                this.on("addedfile", function (file) {
+                });
+
+                // on remove file
+                this.on("removefile", function (file) {
+                });
+            },
+            accept: function (file, done) {
+                done();
+            }
+        };
+   </script>
+}
+
+<style>
+        .panel-title {
+            color: grey;
+            margin-bottom: 20px;
+        }
+
+        .upload-button {
+            color: darkblue;
+            border-radius: 4px;
+            width: 300px;
+        }
+
+        .save-button {
+            background-color: cornflowerblue;
+            color: white;
+            margin-top: 10px;
+            width: 100px;
+        }
+
+            .save-button:hover {
+                column-rule-color: darkblue;
+                background-color: dodgerblue;
+            }
+
+        .file-count-display {
+            color: darkblue;
+            margin-top: 10px;
+        }
+
+        .img-responsive {
+            top: 5px;
+        }
+
+        .image-description {
+            background-color: white;
+            font-size: 10pt;
+            padding: 10px;
+        }
+
+        .delete-button {
+            background-color: sandybrown;
+            color: white;
+            padding: 5px;
+            border-radius: 4px;
+            position: relative;
+            margin-bottom: 4px;
+        }
+
+            .delete-button:hover {
+                color: black;
+                background-color: saddlebrown;
+            }
+
+        .tag-button {
+            display: inline-block;
+            float: left;
+            padding: 0 12px !important;
+            margin: 0 6px 6px 0 !important;
+            background-color: #83c2bc;
+            border-bottom: 0;
+            color: #fff;
+            font-size: 1.0em !important;
+            line-height: 1.71429em;
+            text-decoration: none;
+        }
+
+        .tag-button-m {
+            display: inline-block;
+            float: left;
+            padding: 0 12px !important;
+            margin: 0 6px 6px 0 !important;
+            background-color: coral;
+            border-bottom: 0;
+            color: #fff;
+            font-size: 1.0em !important;
+            line-height: 1.71429em;
+            text-decoration: none;
+        }
+
+        .tag-button:hover {
+            color: white;
+            background-color: cornflowerblue;
+        }
+
+        .tag-button-m:hover {
+            color: white;
+            background-color: cornflowerblue;
+        }
+
+        /* for partial View (_EditTags) */
+        .add-row {
+            border: none;
+            font-size: 22px;
+            color: lightseagreen;
+            background-color: white;
+            margin-top: 5px;
+        }
+
+        .add-row:focus {
+            outline-color: cornflowerblue;
+        }
+
+        .del-row {
+            border: none;
+            font-size: 22px;
+            color: orangered;
+            background-color: white;
+        }
+
+        .del-row:focus {
+            outline-color: cornflowerblue;
+        }
+
+        .tag-row {
+            margin: auto;
+        }
+
+        /* DropZone */
+        .dropzone {
+            color: #ccc;
+            border-style: dashed;
+            border-width: 2px;
+            /* border-radius: 6px; */
+            text-align: center;
+            cursor: pointer;
+        }
+
+        /* Uploading Message */
+        #blinking {
+            margin: 8px 0 0 0;
+            color: dodgerblue;
+            font-weight: bold;
+            -webkit-animation: blink 0.7s ease-in-out infinite alternate;
+            -moz-animation: blink 0.7s ease-in-out infinite alternate;
+            animation: blink 0.7s ease-in-out infinite alternate;
+        }
+        @@-webkit-keyframes blink{
+            0% {opacity:0;}
+            100% {opacity:1;}
+        }
+        @@-moz-keyframes blink{
+            0% {opacity:0;}
+            100% {opacity:1;}
+        }
+        @@keyframes blink{
+            0% {opacity:0;}
+            100% {opacity:1;}
+        }
+</style>

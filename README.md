@@ -116,4 +116,3 @@
 	- userId: 登録先のユーザーID (SQL database [AspNetUsers] テーブルで確認可能)
 	- imagePath: 登録する画像のパス (Blob上など)
 	- imageFiles: 画像ファイル名 (複数可能)
-=======

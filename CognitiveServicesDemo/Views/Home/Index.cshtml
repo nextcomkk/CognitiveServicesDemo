@@ -1,0 +1,56 @@
+﻿@{
+    ViewData["Title"] = "ホーム";
+}
+
+<div class="text-center">
+    <h2>メインメニュー</h2>
+</div>
+
+
+<center>
+    <div class="row" style="max-width: 640px;">
+        <div class="col-lg-6 col-md-12 col-xs-16">
+            <h4 class="menu-link text-center">
+                <a asp-controller="UserMediaRegist" asp-action="Index"><i class="fas fa-cloud-upload-alt"></i> イメージ登録</a>
+            </h4>
+        </div>
+        <div class="col-lg-6 col-md-12 col-xs-12">
+            <h4 class="menu-link text-center">
+                <a asp-controller="UserMediaSearch" asp-action="Index"><i class="fas fa-search"></i> イメージ検索</a>
+            </h4>
+        </div>
+    </div>
+        <h4 class="menu-link-manage text-center ">
+            <a asp-controller="UserMediaManage" asp-action="Index"><i class="fas fa-exclamation-triangle"></i> 管理用</a>
+        </h4>
+</center>
+
+<style>
+    .menu-link, .menu-link-manage {
+        margin: 40px;
+    }
+
+        .menu-link a {
+            border-radius: 5px;
+            background-color: cornflowerblue;
+            color: white;
+            padding: 5px 10px;
+            width: 300px;
+            text-decoration: none;
+        }
+
+        .menu-link-manage a {
+            border-radius: 5px;
+            background-color: darkgray;
+            color: white;
+            padding: 5px 10px;
+            width: 300px;
+            text-decoration: none;
+        }
+
+            .menu-link a:hover, .menu-link-manage a:hover {
+                text-decoration: none;
+                background-color: grey;
+                color: white;
+            }
+</style>

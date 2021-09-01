@@ -1,0 +1,61 @@
+﻿@model CognitiveServicesDemo.Models.EditTags
+
+@{
+    ViewData["Title"] = "独自タグ";
+}
+
+<div class="modal fade" id="editTags">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div id="modal-edit-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">独自タグ</h4>
+                    <button type="button" class="close" data-dismiss="modal"><span><i class="fas fa-times"></i></span></button>
+                </div>
+                <form action="UserMediaRegist/EditTags" method="post">
+                    <div class="modal-body" id="editTagsBody">
+                        <input id="id" name="id" type="hidden" value="@Model.id">
+                        <table style="vertical-align: middle">
+                            <tbody>
+                                @foreach (var item in Model.tags)
+                                {
+                                <tr>
+                                    <td><div class="form-group tag-row"><input type="text" name="mTags_Name[]" class="form-control" value="@item.Name"></div></td>
+                                    <td><button class="del-row"><i class="fas fa-minus-circle"></i></button></td>
+                                </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <button type='button' id="addRow" class="add-row"><i class="fas fa-plus-circle"></i></button>
+                    </div>
+                    @TempData["ErrorMessage"]
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-check-circle"></i> 保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+
+        $('#addRow').click(function () {
+            var html = '<tr><td><div class="form-group tag-row"><input type="text" name="mTags_Name[]" class="form-control"></div></td><td><button type="button" class="del-row"><i class="fas fa-minus-circle"></i></button></td></tr>';
+            $('tbody').append(html);
+        });
+
+        $(document).on('click', '.del-row', function () {
+            $(this).parents('tr').remove();
+        });
+
+        $('#getValues').click(function () {
+            var values = [];
+            $('input[name="tag-name"]').each(function (i, elem) {
+                values.push($(elem).val());
+            });
+            alert(values.join(', '));
+        });
+    });
+</script>
