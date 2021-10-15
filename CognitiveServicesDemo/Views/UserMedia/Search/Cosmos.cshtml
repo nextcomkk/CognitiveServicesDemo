@@ -15,9 +15,14 @@
                     <partial name="_SelectSearchPartial" />
                 </div>
                 <div class="col-lg-8 col-md-10 col-xs-12">
-                    <form asp-controller="UserMediaSearch" asp-action="Cosmos"  method="get" name="form">
+                    <form asp-controller="UserMediaSearch" asp-action="Cosmos" method="get" name="form">
                         <div style="display:inline-flex">
-                            <input type="text" class="form-control" id="SearchKeywords" name="SearchKeywords"  placeholder="検索ワードを入力してください" value="@ViewBag.searchKeywords" style="min-width:240px;" />
+                            <input type="text" class="form-control" id="SearchKeywords" name="SearchKeywords" placeholder="検索ワードを入力してください" value="@ViewBag.searchKeywords" style="min-width:240px;" />
+
+                            <div class="form-inline">
+                                <label class="checkbox-inline" style="min-width:100px;"><input type="checkbox" 　id="IsDirectSearch" name="IsDirectSearch" value="true" @Html.Raw(@ViewBag.isDirectSearch == "true" ? "checked" : "")> 直接検索</label>
+                            </div>
+
                             <input type="submit" class="btn search-button" value="検索" onclick="this.disabled=true; submit();" />
                         </div>
                     </form>
@@ -34,16 +39,19 @@
         </div>
     </div>
     <div class="row">
-        @foreach (var item in Model)
+        @if (Model != null)
         {
-        <div class="col-lg-3 col-md-4 col-xs-6 thumb image-description">
-            <div class="box">
-                <a class="thumbnail" href='?searchKeywords=@item.Tags.Replace("&", "%26")'>
-                    <img class="img-responsive" src="@item.MediaUrl" style="height: auto;width:100%;" title="@item.Tags.Replace("%2B", "+")">
-                    <p>@item.SearchScore</p>
-                </a>
-            </div>
-        </div>
+            foreach (var item in Model)
+            {
+                <div class="col-lg-3 col-md-4 col-xs-6 thumb image-description">
+                    <div class="box">
+                        <a class="thumbnail" href='?searchKeywords=@item.Tags.Replace("&", "%26")'>
+                            <img class="img-responsive" src="@item.MediaUrl" style="height: auto;width:100%;" title="@item.Tags.Replace("%2B", "+")">
+                            <p>@item.SearchScore</p>
+                        </a>
+                    </div>
+                </div>
+            }
         }
     </div>
 </div>
@@ -65,13 +73,20 @@
             document.getElementById("select-search").selectedIndex = selected;
         }
         function change_mode() {
+            var query = "";
             var words = document.getElementById('SearchKeywords');
             if (words.value != null && words.value != '') {
                 tags_array = words.value.split('+');
                 tags_str = tags_array.join('%2B');
-                window.location.href = sessionStorage.getItem('search-mode') + '?searchKeywords=' + tags_str.replace('&', '%26');;
+                query = query + (query == "" ? "?" : "") + 'searchKeywords=' + tags_str.replace('&', '%26');;
             }
-            else window.location.href = sessionStorage.getItem('search-mode');
+
+            console.debug($("#IsDirectSearch").prop("checked"));
+            if ($("#IsDirectSearch").prop("checked") == true)
+                query = query + (query == "" ? "?" : "&") + "isDirectSearch=true"
+
+            console.debug(query);
+            window.location.href = sessionStorage.getItem('search-mode') + query;
         }
 
         $(function () {
@@ -109,10 +124,10 @@
         width: 100px;
     }
 
-    .search-button:hover {
-        column-rule-color: darkblue;
-        background-color: dodgerblue;
-    }
+        .search-button:hover {
+            column-rule-color: darkblue;
+            background-color: dodgerblue;
+        }
 
     .save-button {
         background-color: cornflowerblue;
@@ -121,10 +136,10 @@
         width: 100px;
     }
 
-    .save-button:hover {
-        column-rule-color: darkblue;
-        background-color: dodgerblue;
-    }
+        .save-button:hover {
+            column-rule-color: darkblue;
+            background-color: dodgerblue;
+        }
 
     .file-count-display {
         color: darkblue;
@@ -144,6 +159,7 @@
     .box {
         position: relative;
     }
+
         .box p {
             color: white;
             font-size: 20px;
@@ -168,6 +184,4 @@
             color: black;
             background-color: saddlebrown;
         }
-
-
 </style>

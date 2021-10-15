@@ -28,10 +28,14 @@ namespace CognitiveServicesDemo.Controllers
         private const string viewIndex_blob = "~/Views/UserMedia/Search/Blob.cshtml";
         private const string viewIndex_sql = "~/Views/UserMedia/Search/SQL.cshtml";
 
-        public UserMediaSearchController(UserManager<ApplicationUser> userManager, ApplicationDbContext context) : base(userManager, context)
+        private readonly DirectSearchService directSearch;
+
+        public UserMediaSearchController(UserManager<ApplicationUser> userManager, ApplicationDbContext context, DirectSearchService directSearchService) : base(userManager, context)
         {
             _userManager = userManager;
             _context = context;
+
+            directSearch = directSearchService;
         }
 
         [Authorize]
@@ -44,7 +48,7 @@ namespace CognitiveServicesDemo.Controllers
             {
                 case "Table": return RedirectToAction("Table", new { @searchKeywords = searchKeywords });
                 case "Blob": return RedirectToAction("Blob", new { @searchKeywords = searchKeywords });
-                //case "SQL": return RedirectToAction("SQL", new { @searchKeywords = searchKeywords });
+                case "SQL": return RedirectToAction("SQL", new { @searchKeywords = searchKeywords });
                 case "Cosmos":
                 default: return RedirectToAction("Cosmos", new { @searchKeywords = searchKeywords });
             }
@@ -52,11 +56,13 @@ namespace CognitiveServicesDemo.Controllers
 
         [Authorize]
         [HttpGet]
-
-        public IActionResult SQL(string searchKeywords)
+        public IActionResult SQL(string searchKeywords, string isDirectSearch)
         {
+            ViewBag.searchKeywords = searchKeywords;
+            ViewBag.isDirectSearch = isDirectSearch;
+
             List<SearchResultUserMedia> searchResult = new();
-            if (String.IsNullOrEmpty(searchKeywords)) return View(viewIndex_sql, searchResult);
+            if (string.IsNullOrEmpty(searchKeywords)) return View(viewIndex_sql, searchResult);
 
             try
             {
@@ -66,20 +72,32 @@ namespace CognitiveServicesDemo.Controllers
                 HttpContext.Session.SetString(sessionKey_searchMode, "SQL");
                 string loggedInUserId = _userManager.GetUserId(User);
 
-                CognitiveSearchService searchService = new();
-                searchResult = searchService.Search_SQL(searchKeywords, loggedInUserId);
+                if (isDirectSearch == "true")
+                {
+                    searchResult = directSearch.Search_SQL(searchKeywords, loggedInUserId);
+                }
+                else
+                {
+                    CognitiveSearchService searchService = new();
+                    searchResult = searchService.Search_SQL(searchKeywords, loggedInUserId);
+                }
+
                 sw.Stop();
 
-                Console.WriteLine(searchResult.Count.ToString());
+                if (searchResult == null)
+                {
+                    ViewBag.ResultInfo = "検索出来ませんでした。環境に問題が有る可能性があります。";
+                }
+                else
+                {
+                    string SearchResultCount = searchResult.Count.ToString();
+                    Console.WriteLine(SearchResultCount);
 
-                string SearchResultCount = searchResult.Count.ToString();
+                    if (searchResult.Count > displayMaxItems) searchResult.RemoveRange(displayMaxItems, searchResult.Count - displayMaxItems);
 
-                Console.WriteLine(SearchResultCount);
+                    ViewBag.ResultInfo = "検索結果: " + SearchResultCount + " 件 ( 検索時間: " + sw.Elapsed.ToString() + " )";
+                }
 
-                if (searchResult.Count > displayMaxItems) searchResult.RemoveRange(displayMaxItems, searchResult.Count- displayMaxItems);
-
-                ViewBag.ResultInfo = "検索結果: " + SearchResultCount + " 件 ( 検索時間: " + sw.Elapsed.ToString() + " )";                
-                ViewBag.SearchKeywords = searchKeywords;
 
                 return View(viewIndex_sql, searchResult);
             }
@@ -92,8 +110,11 @@ namespace CognitiveServicesDemo.Controllers
 
         [Authorize]
         [HttpGet]
-        public IActionResult Cosmos(string searchKeywords)
+        public IActionResult Cosmos(string searchKeywords, string isDirectSearch)
         {
+            ViewBag.searchKeywords = searchKeywords;
+            ViewBag.isDirectSearch = isDirectSearch;
+
             List<SearchResultUserMedia> searchResult = new();
             if (String.IsNullOrEmpty(searchKeywords)) return View(viewIndex_cosmos, searchResult);
 
@@ -105,15 +126,32 @@ namespace CognitiveServicesDemo.Controllers
                 HttpContext.Session.SetString(sessionKey_searchMode, "Cosmos");
                 string loggedInUserId = _userManager.GetUserId(User);
 
-                CognitiveSearchService searchService = new();
-                searchResult = searchService.Search_Cosmos(searchKeywords, loggedInUserId);
+                if (isDirectSearch == "true")
+                {
+                    searchResult = directSearch.Search_Cosmos(searchKeywords, loggedInUserId);
+                }
+                else
+                {
+                    CognitiveSearchService searchService = new();
+                    searchResult = searchService.Search_Cosmos(searchKeywords, loggedInUserId);
+                }
+
                 sw.Stop();
 
-                string SearchResultCount = searchResult.Count.ToString();
-                if (searchResult.Count > displayMaxItems) searchResult.RemoveRange(displayMaxItems, searchResult.Count - displayMaxItems);
 
-                ViewBag.ResultInfo = "検索結果: " + SearchResultCount + " 件 ( 検索時間: " + sw.Elapsed.ToString() + " )";
-                ViewBag.SearchKeywords = searchKeywords;
+                if (searchResult == null)
+                {
+                    ViewBag.ResultInfo = "検索出来ませんでした。環境に問題が有る可能性があります。";
+                }
+                else
+                {
+                    string SearchResultCount = searchResult.Count.ToString();
+                    Console.WriteLine(SearchResultCount);
+
+                    if (searchResult.Count > displayMaxItems) searchResult.RemoveRange(displayMaxItems, searchResult.Count - displayMaxItems);
+
+                    ViewBag.ResultInfo = "検索結果: " + SearchResultCount + " 件 ( 検索時間: " + sw.Elapsed.ToString() + " )";
+                }
 
                 return View(viewIndex_cosmos, searchResult);
             }
@@ -129,6 +167,8 @@ namespace CognitiveServicesDemo.Controllers
         [HttpGet]
         public IActionResult Table(string searchKeywords)
         {
+            ViewBag.SearchKeywords = searchKeywords;
+
             List<SearchResultUserMedia> searchResult = new();
             if (String.IsNullOrEmpty(searchKeywords)) return View(viewIndex_table, searchResult);
 
@@ -142,13 +182,22 @@ namespace CognitiveServicesDemo.Controllers
 
                 CognitiveSearchService searchService = new();
                 searchResult = searchService.Search_Table(searchKeywords, loggedInUserId);
+
                 sw.Stop();
 
-                string SearchResultCount = searchResult.Count.ToString();
-                if (searchResult.Count > displayMaxItems) searchResult.RemoveRange(displayMaxItems, searchResult.Count - displayMaxItems);
+                if (searchResult == null)
+                {
+                    ViewBag.ResultInfo = "検索出来ませんでした。環境に問題が有る可能性があります。";
+                }
+                else
+                {
+                    string SearchResultCount = searchResult.Count.ToString();
+                    Console.WriteLine(SearchResultCount);
 
-                ViewBag.ResultInfo = "検索結果: " + SearchResultCount + " 件 ( 検索時間: " + sw.Elapsed.ToString() + " )";
-                ViewBag.SearchKeywords = searchKeywords;
+                    if (searchResult.Count > displayMaxItems) searchResult.RemoveRange(displayMaxItems, searchResult.Count - displayMaxItems);
+
+                    ViewBag.ResultInfo = "検索結果: " + SearchResultCount + " 件 ( 検索時間: " + sw.Elapsed.ToString() + " )";
+                }
 
                 return View(viewIndex_table, searchResult);
             }
@@ -162,6 +211,8 @@ namespace CognitiveServicesDemo.Controllers
         [Authorize]
         public IActionResult Blob(string searchKeywords)
         {
+            ViewBag.SearchKeywords = searchKeywords;
+
             List<SearchResultUserMedia> searchResult = new();
             if (String.IsNullOrEmpty(searchKeywords)) return View(viewIndex_blob, searchResult);
 
@@ -175,13 +226,23 @@ namespace CognitiveServicesDemo.Controllers
 
                 CognitiveSearchService searchService = new();
                 searchResult = searchService.Search_Blob(searchKeywords, loggedInUserId);
+
                 sw.Stop();
 
-                string SearchResultCount = searchResult.Count.ToString();
-                if (searchResult.Count > displayMaxItems) searchResult.RemoveRange(displayMaxItems, searchResult.Count - displayMaxItems);
 
-                ViewBag.ResultInfo = "検索結果: " + SearchResultCount + " 件 ( 検索時間: " + sw.Elapsed.ToString() + " )";
-                ViewBag.SearchKeywords = searchKeywords;
+                if (searchResult == null)
+                {
+                    ViewBag.ResultInfo = "検索出来ませんでした。環境に問題が有る可能性があります。";
+                }
+                else
+                {
+                    string SearchResultCount = searchResult.Count.ToString();
+                    Console.WriteLine(SearchResultCount);
+
+                    if (searchResult.Count > displayMaxItems) searchResult.RemoveRange(displayMaxItems, searchResult.Count - displayMaxItems);
+
+                    ViewBag.ResultInfo = "検索結果: " + SearchResultCount + " 件 ( 検索時間: " + sw.Elapsed.ToString() + " )";
+                }
 
                 return View(viewIndex_blob, searchResult);
             }
